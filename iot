@@ -1,0 +1,114 @@
+#!/usr/bin/env node --inspect
+
+const yargs = require('yargs');
+const Client = require('./Client');
+
+yargs  
+    .command(
+        'exec <capability> <command> [arguments..]',
+        'control an IOT device',
+        yargs => yargs
+            .example(
+                'iot exec switch off -t <TOKEN> -l smart-bulb',
+                'turn off a light bulb with the label: "smart-bulb"',
+            )
+            .example(
+                'iot control switchLevel setLevel 10 -t <TOKEN> -l smart-bulb',
+                'sets the light level to 10 for the "smart-bulb" device',
+            )
+            .middleware(args => {
+                return args
+            })
+            .positional('capability', {
+                describe: 'the capability of the device to control',
+                type: 'string',
+            })
+            .positional('command', {
+                describe: 'command to execute on the device',
+                type: 'string',
+            })
+            .positional('arguments', {
+                describe: 'arguments for the command',
+                type: 'string',
+            })
+            .option('label', {
+                alias: ['l'],
+                type: 'string',
+                conflicts: ['id'],
+            })
+            .option('id', {
+                type: 'string',
+            })
+            .option('token', {
+                required: true,
+                alias: ['t'],
+                type: 'string'
+            })
+            .middleware(args => {
+                if (!args.label && !args.id) {
+                    throw new Error('must enter device label or id');
+                }
+                if (!args.token) {
+                    throw new Error('must enter token');
+                }
+                
+                args.arguments.forEach((a, i) => {
+                    if (!isNaN(a)) {
+                        args.arguments[i] = parseInt(a, 10);
+                    }
+                });
+            }),
+        async args => {
+            const client = new Client(args.token);
+
+            try {
+                let dvc;
+                if (args.label) {
+                    dvc = await client.getDeviceByLabel(args.label);
+                } else {
+                    dvc = await client.getDeviceById(args.id);
+                }
+                
+                const res = await dvc.execute({
+                    capability: args.capability,
+                    command: args.command,
+                    arguments: args.arguments,
+                });
+                console.log(res);
+            } catch (err) {
+                console.log(`Error: ${err.message}`);
+                process.exit(1);
+            }
+        },
+    )
+    .command(
+        'devices <command>',
+        'view devices',
+        yargs => yargs
+            .example(
+                'iot devices list -t <TOKEN>',
+                'list all devices',
+            )
+            .positional('command', {
+                choices: ['list', 'get'],
+            })
+            .option('token', {
+                required: true,
+                alias: ['t'],
+                type: 'string'
+            }),
+        args => {
+            return new Client(args.token).listDevices()
+                .then(dvsc => console.log(dvsc))
+                .catch((err) => {
+                    console.log(`Error: ${err.message}`);
+                    process.exit(1);
+                });
+        },
+    )
+    .help()
+    .demandCommand(1)
+    .strict()
+    .env('IOT')
+    .argv;
+    
