@@ -1,4 +1,4 @@
-#!/usr/bin/env node --inspect
+#!/usr/bin/env node
 
 const yargs = require('yargs');
 const Client = require('./Client');
@@ -52,11 +52,17 @@ yargs
                     throw new Error('must enter token');
                 }
                 
-                args.arguments.forEach((a, i) => {
-                    if (!isNaN(a)) {
-                        args.arguments[i] = parseInt(a, 10);
+                args.arguments = args.arguments.reduce((acc, cur) => {
+                    if (!cur) {
+                        return acc;
                     }
-                });
+                    if (cur && !isNaN(cur)) {
+                        acc.push(parseInt(cur, 10));
+                    } else {
+                        acc.push(cur);
+                    }
+                    return acc;
+                }, []);
             }),
         async args => {
             const client = new Client(args.token);
