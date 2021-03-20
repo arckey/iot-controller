@@ -19,4 +19,12 @@ iot devices list -t <TOKEN>
 ### turn off a light bulb with the label: "smart-bulb"
 
 iot exec switch off -t <TOKEN> -l smart-bulb
+
+### with argo workflows
+
+argo template create ./workflows/workflow-template.yaml # create the template
+
+argo submit ./workflows/workflow.yaml -p capability=switch -p command=on -p token=<TOKEN> -p label=smart-bulb --watch
+
+argo submit ./workflows/workflow.yaml -p capability=switchLevel -p command=setLevel -p arguments=80 -p token=<TOKEN> -p label=smart-bulb --watch
 ```
