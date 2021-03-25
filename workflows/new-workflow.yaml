@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: iot-controller-
+spec:
+  entrypoint: entrypoint
+  arguments:
+    parameters:
+    - name: capability
+    - name: command
+    - name: arguments
+      value: ""
+    - name: token
+    - name: label
+  templates:
+  - name: entrypoint
+    steps:
+      - - name: entrypoint
+          templateRef:
+            name: http://localhost:8080/my-org/iot-plugin@v0.0.1
+            template: iot-controller
+          arguments:
+            parameters:
+            - name: capability
+              value: "{{workflow.parameters.capability}}"
+            - name: command
+              value: "{{workflow.parameters.command}}"
+            - name: arguments
+              value: "{{workflow.parameters.arguments}}"
+            - name: token
+              value: "{{workflow.parameters.token}}"
+            - name: label
+              value: "{{workflow.parameters.label}}"

@@ -1,0 +1,4 @@
+capability: switch
+command: off
+token: <SMARTTHINGS_TOKEN>
+label: iot-device-label
